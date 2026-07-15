@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Pieces{% endblock %}
+{% block content %}
+  <h1>Pieces</h1>
+
+  <div class="piece-grid">
+    {% for piece in pieces %}
+      {% set avg = piece.average_percent() %}
+      {% set bg = mix_with_white(piece.color, avg) %}
+      {% set txt = readable_text_color(bg) %}
+      <a class="piece-card" href="{{ url_for('piece_detail', piece_id=piece.id) }}"
+         style="background: {{ bg }}; color: {{ txt }}; border-left: 6px solid {{ piece.color }};">
+        <h2>{{ piece.title }}</h2>
+        {% if piece.composer %}<p class="composer">{{ piece.composer }}</p>{% endif %}
+        <div class="piece-percent">{{ avg }}% overall</div>
+      </a>
+    {% else %}
+      <p>No pieces yet — add the first one below.</p>
+    {% endfor %}
+  </div>
+
+  <h2>Add a piece</h2>
+  <form method="post" action="{{ url_for('add_piece') }}" class="stacked-form">
+    <label>Title
+      <input type="text" name="title" placeholder="e.g. Chopin Etude Op. 10 No. 4" required>
+    </label>
+    <label>Composer
+      <input type="text" name="composer" placeholder="e.g. Chopin">
+    </label>
+    <label>Colour
+      <input type="color" name="color" value="{{ next_color }}">
+    </label>
+    <button type="submit">Add piece</button>
+  </form>
+{% endblock %}

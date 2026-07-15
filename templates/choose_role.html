@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Who are you?{% endblock %}
+{% block content %}
+  <h1>Who's using the app?</h1>
+  <div class="role-cards">
+    {% for role in roles %}
+      <form method="post" action="{{ url_for('set_role') }}">
+        <input type="hidden" name="role" value="{{ role }}">
+        <button type="submit" class="role-card role-{{ role }}">{{ role_labels[role] }}</button>
+      </form>
+    {% endfor %}
+  </div>
+{% endblock %}

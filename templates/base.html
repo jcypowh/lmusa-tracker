@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}LMUSA Practice Tracker{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('list_pieces') }}">LMUSA Practice Tracker</a>
+    {% if current_role %}
+      <div class="whoami">
+        Viewing as <strong>{{ role_labels[current_role] }}</strong>
+        &middot; <a href="{{ url_for('switch_role') }}">switch</a>
+      </div>
+    {% endif %}
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

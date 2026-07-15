@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}{{ piece.title }}{% endblock %}
+{% block content %}
+  <p><a href="{{ url_for('list_pieces') }}">&larr; All pieces</a></p>
+  <div class="piece-header">
+    <div>
+      <h1>{{ piece.title }}</h1>
+      {% if piece.composer %}<p class="composer">{{ piece.composer }}</p>{% endif %}
+    </div>
+    <form method="post" action="{{ url_for('update_piece_color', piece_id=piece.id) }}" class="piece-color-form">
+      <label>Piece colour
+        <input type="color" name="color" value="{{ piece.color }}" onchange="this.form.submit()">
+      </label>
+    </form>
+  </div>
+  <p class="piece-percent-line">{{ piece.average_percent() }}% overall achievement</p>
+
+  <h2>Reference performance</h2>
+  {% set reference_video = piece.videos | selectattr("is_reference") | first %}
+  {% if reference_video %}
+    <div class="video-item">
+      <video controls preload="metadata" src="{{ url_for('uploaded_file', filename=reference_video.filename) }}"></video>
+      <p>
+        {{ reference_video.original_filename }} &middot; uploaded by {{ role_labels[reference_video.uploaded_by] }}
+        &middot; {{ reference_video.created_at.strftime('%Y-%m-%d %H:%M') }}
+      </p>
+      {% if reference_video.note %}<p class="note">{{ reference_video.note }}</p>{% endif %}
+      <form method="post" action="{{ url_for('delete_video', video_id=reference_video.id) }}"
+            class="inline-form" onsubmit="return confirm('Delete the reference recording?');">
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <button type="submit" class="delete-btn">Delete</button>
+      </form>
+    </div>
+    <p class="board-hint">Uploading a new one below replaces this recording.</p>
+  {% else %}
+    <p>No reference recording yet &mdash; either of you can upload the standard to study against.</p>
+  {% endif %}
+  <form method="post" action="{{ url_for('upload_reference_video', piece_id=piece.id) }}" enctype="multipart/form-data" class="stacked-form">
+    <label>{{ "Replace" if reference_video else "Upload" }} reference video
+      <input type="file" name="video" accept="video/*" required>
+    </label>
+    <label>Note
+      <input type="text" name="note" placeholder="e.g. Horowitz 1968 recording">
+    </label>
+    <button type="submit">Upload</button>
+  </form>
+
+  <h2>General knowledge</h2>
+  <p class="board-hint">Exam-prep points worth remembering &mdash; add them as they come up, not the night before.</p>
+  <div class="knowledge-list">
+    {% for note in piece.knowledge_notes %}
+      <div class="knowledge-item knowledge-{{ note.author }}">
+        <div class="comment-meta">
+          <strong>{{ role_labels[note.author] }}</strong>
+          <span>{{ note.created_at.strftime('%Y-%m-%d') }}</span>
+        </div>
+        <p>{{ note.body }}</p>
+        <form method="post" action="{{ url_for('delete_knowledge_note', note_id=note.id) }}"
+              class="inline-form" onsubmit="return confirm('Delete this point?');">
+          <button type="submit" class="delete-btn">Delete</button>
+        </form>
+      </div>
+    {% else %}
+      <p>No knowledge points yet.</p>
+    {% endfor %}
+  </div>
+  <form method="post" action="{{ url_for('add_knowledge_note', piece_id=piece.id) }}" class="stacked-form">
+    <label>Add a point to remember
+      <textarea name="body" rows="2" placeholder="e.g. Watch the pedal marking difference between bars 8 and 24" required></textarea>
+    </label>
+    <button type="submit">Add point</button>
+  </form>
+
+  <div class="board-header">
+    <h2>Areas of improvement</h2>
+    <button type="button" id="tidy-btn" class="tidy-btn">Tidy up</button>
+  </div>
+  <p class="board-hint">Drag cards to shuffle them. Tap a card to open it.</p>
+  <div class="board" id="board" data-piece-id="{{ piece.id }}">
+    {% for area in piece.areas if not area.archived %}
+      {% set bg = mix_with_white(piece.color, area.percent) %}
+      {% set txt = readable_text_color(bg) %}
+      <div class="card"
+           data-id="{{ area.id }}"
+           data-href="{{ url_for('area_detail', area_id=area.id) }}"
+           style="left: {{ area.pos_x or 16 }}px; top: {{ area.pos_y or 16 }}px; z-index: {{ area.z_index or 0 }};
+                  background: {{ bg }}; color: {{ txt }}; border-left-color: {{ piece.color }};">
+        <div class="card-title">{{ area.title }}</div>
+        <div class="card-sub">{{ area.percent }}%</div>
+      </div>
+    {% else %}
+      <p>No active areas of improvement &mdash; add one below.</p>
+    {% endfor %}
+  </div>
+
+  <h3>Add a new area of improvement</h3>
+  <form method="post" action="{{ url_for('add_area', piece_id=piece.id) }}" class="stacked-form">
+    <label>What needs work?
+      <input type="text" name="title" placeholder="e.g. Left hand octave leaps, bar 12-16" required>
+    </label>
+    <label>Details
+      <textarea name="description" rows="3" placeholder="Notes, what to focus on..."></textarea>
+    </label>
+    <button type="submit">Add area</button>
+  </form>
+
+  {% set archived_areas = piece.areas | selectattr("archived") | list %}
+  {% if archived_areas %}
+    <details class="archived-section">
+      <summary>Achieved ({{ archived_areas|length }})</summary>
+      <div class="archived-list">
+        {% for area in archived_areas %}
+          {% set bg = mix_with_white(piece.color, area.percent) %}
+          <div class="archived-row" style="border-left: 4px solid {{ piece.color }};">
+            <span class="archived-swatch" style="background: {{ bg }};"></span>
+            <a class="archived-title" href="{{ url_for('area_detail', area_id=area.id) }}">{{ area.title }}</a>
+            <span class="card-sub">{{ area.percent }}%</span>
+            <form method="post" action="{{ url_for('unarchive_area', area_id=area.id) }}" class="inline-form">
+              <button type="submit">Unarchive</button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+    </details>
+  {% endif %}
+
+  <h2>Lesson / practice videos</h2>
+  <div class="video-list">
+    {% for video in piece.videos | rejectattr("is_reference") %}
+      <div class="video-item">
+        <video controls preload="metadata" src="{{ url_for('uploaded_file', filename=video.filename) }}"></video>
+        <p>
+          {{ video.original_filename }} &middot; uploaded by {{ role_labels[video.uploaded_by] }}
+          &middot; {{ video.created_at.strftime('%Y-%m-%d %H:%M') }}
+          {% if video.area %} &middot; linked to <a href="{{ url_for('area_detail', area_id=video.area.id) }}">{{ video.area.title }}</a>{% endif %}
+        </p>
+        {% if video.note %}<p class="note">{{ video.note }}</p>{% endif %}
+        <form method="post" action="{{ url_for('delete_video', video_id=video.id) }}"
+              class="inline-form" onsubmit="return confirm('Delete this video?');">
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button type="submit" class="delete-btn">Delete</button>
+        </form>
+      </div>
+    {% else %}
+      <p>No videos uploaded for this piece yet.</p>
+    {% endfor %}
+  </div>
+
+  <h3>Upload a video</h3>
+  <form method="post" action="{{ url_for('upload_piece_video', piece_id=piece.id) }}" enctype="multipart/form-data" class="stacked-form">
+    <label>Video file
+      <input type="file" name="video" accept="video/*" required>
+    </label>
+    <label>Note
+      <input type="text" name="note" placeholder="Optional note about this recording">
+    </label>
+    <button type="submit">Upload</button>
+  </form>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='board.js') }}"></script>
+{% endblock %}
