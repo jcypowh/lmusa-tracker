@@ -45,15 +45,6 @@ app.jinja_env.globals["readable_text_color"] = readable_text_color
 
 os.makedirs(config.UPLOAD_DIR, exist_ok=True)
 
-# Default neat-grid card layout (client-side "Tidy up" recomputes this against
-# the actual viewport width; these are just sane server-side defaults for a
-# freshly created card before any dragging happens).
-GRID_MARGIN = 16
-GRID_CARD_W = 170
-GRID_CARD_H = 116
-GRID_GAP = 14
-GRID_COLS = 2
-
 
 @app.context_processor
 def inject_globals():
@@ -210,64 +201,16 @@ def add_area(piece_id):
     title = request.form.get("title", "").strip()
     description = request.form.get("description", "").strip()
     if title:
-        active = [a for a in piece.areas if not a.archived]
-        slot = len(active)
-        col = slot % GRID_COLS
-        row = slot // GRID_COLS
         area = ImprovementArea(
             piece_id=piece.id,
             title=title,
             description=description,
             status="orange",
             created_by=session.get("role"),
-            pos_x=GRID_MARGIN + col * (GRID_CARD_W + GRID_GAP),
-            pos_y=GRID_MARGIN + row * (GRID_CARD_H + GRID_GAP),
-            z_index=slot,
         )
         db.session.add(area)
         db.session.commit()
     return redirect(url_for("piece_detail", piece_id=piece.id))
-
-
-@app.route("/pieces/<int:piece_id>/tidy", methods=["POST"])
-@require_role
-def tidy_board(piece_id):
-    piece = Piece.query.get_or_404(piece_id)
-    data = request.get_json(silent=True) or {}
-    positions = data.get("positions") or []
-    by_id = {a.id: a for a in piece.areas}
-    for i, entry in enumerate(positions):
-        area = by_id.get(entry.get("id"))
-        if not area:
-            continue
-        try:
-            area.pos_x = max(0, min(int(entry["x"]), 4000))
-            area.pos_y = max(0, min(int(entry["y"]), 4000))
-        except (KeyError, TypeError, ValueError):
-            continue
-        area.z_index = i
-    db.session.commit()
-    return jsonify({"ok": True})
-
-
-@app.route("/areas/<int:area_id>/position", methods=["POST"])
-@require_role
-def update_position(area_id):
-    area = ImprovementArea.query.get_or_404(area_id)
-    data = request.get_json(silent=True) or {}
-    try:
-        x = int(data["x"])
-        y = int(data["y"])
-    except (KeyError, TypeError, ValueError):
-        abort(400)
-    area.pos_x = max(0, min(x, 4000))
-    area.pos_y = max(0, min(y, 4000))
-    top_z = db.session.query(db.func.max(ImprovementArea.z_index)).filter_by(
-        piece_id=area.piece_id
-    ).scalar() or 0
-    area.z_index = top_z + 1
-    db.session.commit()
-    return jsonify({"ok": True, "z_index": area.z_index})
 
 
 @app.route("/pieces/<int:piece_id>/videos/upload", methods=["POST"])

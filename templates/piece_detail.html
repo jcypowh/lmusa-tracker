@@ -71,22 +71,45 @@
     <button type="submit">Add point</button>
   </form>
 
-  <div class="board-header">
-    <h2>Areas of improvement</h2>
-    <button type="button" id="tidy-btn" class="tidy-btn">Tidy up</button>
-  </div>
-  <p class="board-hint">Drag cards to shuffle them. Tap a card to open it.</p>
-  <div class="board" id="board" data-piece-id="{{ piece.id }}">
+  <h2>Areas of improvement</h2>
+  <p class="board-hint">Tap an area to open it, adjust progress, or jump to the full page.</p>
+  <div class="accordion" id="accordion">
     {% for area in piece.areas if not area.archived %}
       {% set bg = mix_with_white(piece.color, area.percent) %}
       {% set txt = readable_text_color(bg) %}
-      <div class="card"
-           data-id="{{ area.id }}"
-           data-href="{{ url_for('area_detail', area_id=area.id) }}"
-           style="left: {{ area.pos_x or 16 }}px; top: {{ area.pos_y or 16 }}px; z-index: {{ area.z_index or 0 }};
-                  background: {{ bg }}; color: {{ txt }}; border-left-color: {{ piece.color }};">
-        <div class="card-title">{{ area.title }}</div>
-        <div class="card-sub">{{ area.percent }}%</div>
+      <div class="acc-item">
+        <button type="button" class="acc-header" aria-expanded="false"
+                data-target="acc-body-{{ area.id }}"
+                style="background: {{ bg }}; color: {{ txt }}; border-left-color: {{ piece.color }};">
+          <span class="acc-title">{{ area.title }}</span>
+          <span class="acc-percent">{{ area.percent }}%</span>
+          <span class="acc-chevron">&#9656;</span>
+        </button>
+        <div class="acc-body" id="acc-body-{{ area.id }}" hidden>
+          {% if area.description %}<p class="acc-desc">{{ area.description }}</p>{% endif %}
+          <div class="percent-block">
+            {% if current_role == "darren" %}
+              <input type="range" min="0" max="100" value="{{ area.percent }}"
+                     class="acc-slider" data-area-id="{{ area.id }}" data-color="{{ piece.color }}">
+              <span class="acc-slider-value">{{ area.percent }}</span>%
+            {% else %}
+              <div class="percent-track"><div class="percent-fill" style="width: {{ area.percent }}%; background: {{ piece.color }};"></div></div>
+              <span>{{ area.percent }}%</span>
+            {% endif %}
+          </div>
+          <div class="acc-actions">
+            <a href="{{ url_for('area_detail', area_id=area.id) }}">Open full page &rarr;</a>
+            <form method="post" action="{{ url_for('archive_area', area_id=area.id) }}" class="inline-form">
+              <button type="submit" class="archive-btn">Mark as Achieved</button>
+            </form>
+            {% if current_role == "darren" %}
+              <form method="post" action="{{ url_for('delete_area', area_id=area.id) }}" class="inline-form"
+                    onsubmit="return confirm('Delete this area of improvement? This removes it and its discussion permanently.');">
+                <button type="submit" class="delete-btn">Delete</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
       </div>
     {% else %}
       <p>No active areas of improvement &mdash; add one below.</p>
@@ -114,7 +137,7 @@
           <div class="archived-row" style="border-left: 4px solid {{ piece.color }};">
             <span class="archived-swatch" style="background: {{ bg }};"></span>
             <a class="archived-title" href="{{ url_for('area_detail', area_id=area.id) }}">{{ area.title }}</a>
-            <span class="card-sub">{{ area.percent }}%</span>
+            <span class="archived-percent">{{ area.percent }}%</span>
             <form method="post" action="{{ url_for('unarchive_area', area_id=area.id) }}" class="inline-form">
               <button type="submit">Unarchive</button>
             </form>
@@ -158,5 +181,5 @@
   </form>
 {% endblock %}
 {% block scripts %}
-  <script src="{{ url_for('static', filename='board.js') }}"></script>
+  <script src="{{ url_for('static', filename='accordion.js') }}"></script>
 {% endblock %}

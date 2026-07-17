@@ -53,9 +53,6 @@ class ImprovementArea(db.Model):
     created_by = db.Column(db.String(10))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    pos_x = db.Column(db.Integer, default=16)
-    pos_y = db.Column(db.Integer, default=16)
-    z_index = db.Column(db.Integer, default=0)
     archived = db.Column(db.Boolean, default=False, nullable=False)
 
     comments = db.relationship(
