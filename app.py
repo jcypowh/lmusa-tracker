@@ -231,9 +231,6 @@ def upload_reference_video(piece_id):
     piece = Piece.query.get_or_404(piece_id)
     file_storage = request.files.get("video")
     if file_storage and file_storage.filename and allowed_video(file_storage.filename):
-        Video.query.filter_by(piece_id=piece.id, is_reference=True).update(
-            {"is_reference": False}
-        )
         video = save_video(file_storage, piece.id, is_reference=True)
         video.note = request.form.get("note", "").strip()
         db.session.commit()

@@ -16,31 +16,35 @@
   <p class="piece-percent-line">{{ piece.average_percent() }}% overall achievement</p>
 
   <h2>Reference performance</h2>
-  {% set reference_video = piece.videos | selectattr("is_reference") | first %}
-  {% if reference_video %}
-    <div class="video-item">
-      <video controls preload="metadata" src="{{ url_for('uploaded_file', filename=reference_video.filename) }}"></video>
-      <p>
-        {{ reference_video.original_filename }} &middot; uploaded by {{ role_labels[reference_video.uploaded_by] }}
-        &middot; {{ reference_video.created_at.strftime('%Y-%m-%d %H:%M') }}
-      </p>
-      {% if reference_video.note %}<p class="note">{{ reference_video.note }}</p>{% endif %}
-      <form method="post" action="{{ url_for('delete_video', video_id=reference_video.id) }}"
-            class="inline-form" onsubmit="return confirm('Delete the reference recording?');">
-        <input type="hidden" name="next" value="{{ request.path }}">
-        <button type="submit" class="delete-btn">Delete</button>
-      </form>
+  <p class="board-hint">Split it into sections if that's easier to study &mdash; e.g. opening, flowing section, climax.</p>
+  {% set reference_videos = piece.videos | selectattr("is_reference") | list %}
+  {% if reference_videos %}
+    <div class="video-list">
+      {% for video in reference_videos %}
+        <div class="video-item">
+          <video controls preload="metadata" src="{{ url_for('uploaded_file', filename=video.filename) }}"></video>
+          <p>
+            {% if video.note %}<strong>{{ video.note }}</strong> &middot; {% endif %}
+            {{ video.original_filename }} &middot; uploaded by {{ role_labels[video.uploaded_by] }}
+            &middot; {{ video.created_at.strftime('%Y-%m-%d %H:%M') }}
+          </p>
+          <form method="post" action="{{ url_for('delete_video', video_id=video.id) }}"
+                class="inline-form" onsubmit="return confirm('Delete this reference recording?');">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="delete-btn">Delete</button>
+          </form>
+        </div>
+      {% endfor %}
     </div>
-    <p class="board-hint">Uploading a new one below replaces this recording.</p>
   {% else %}
-    <p>No reference recording yet &mdash; either of you can upload the standard to study against.</p>
+    <p>No reference recordings yet &mdash; either of you can upload the standard to study against.</p>
   {% endif %}
   <form method="post" action="{{ url_for('upload_reference_video', piece_id=piece.id) }}" enctype="multipart/form-data" class="stacked-form">
-    <label>{{ "Replace" if reference_video else "Upload" }} reference video
+    <label>Add a reference video
       <input type="file" name="video" accept="video/*" required>
     </label>
-    <label>Note
-      <input type="text" name="note" placeholder="e.g. Horowitz 1968 recording">
+    <label>Section label (optional)
+      <input type="text" name="note" placeholder="e.g. Opening, Flowing section, Climax">
     </label>
     <button type="submit">Upload</button>
   </form>
