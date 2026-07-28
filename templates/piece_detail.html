@@ -15,154 +15,6 @@
   </div>
   <p class="piece-percent-line">{{ piece.average_percent() }}% overall achievement</p>
 
-  <h2>Reference performance</h2>
-  <p class="board-hint">Split it into sections if that's easier to study &mdash; e.g. opening, flowing section, climax.</p>
-  {% set reference_videos = piece.videos | selectattr("is_reference") | list %}
-  {% if reference_videos %}
-    <div class="video-list">
-      {% for video in reference_videos %}
-        <div class="video-item">
-          <video controls preload="metadata" src="{{ url_for('uploaded_file', filename=video.filename) }}"></video>
-          <p>
-            {% if video.note %}<strong>{{ video.note }}</strong> &middot; {% endif %}
-            {{ video.original_filename }} &middot; uploaded by {{ role_labels[video.uploaded_by] }}
-            &middot; {{ video.created_at.strftime('%Y-%m-%d %H:%M') }}
-          </p>
-          <form method="post" action="{{ url_for('delete_video', video_id=video.id) }}"
-                class="inline-form" onsubmit="return confirm('Delete this reference recording?');">
-            <input type="hidden" name="next" value="{{ request.path }}">
-            <button type="submit" class="delete-btn">Delete</button>
-          </form>
-        </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p>No reference recordings yet &mdash; either of you can upload the standard to study against.</p>
-  {% endif %}
-  <form method="post" action="{{ url_for('upload_reference_video', piece_id=piece.id) }}" enctype="multipart/form-data" class="stacked-form">
-    <label>Add a reference video
-      <input type="file" name="video" accept="video/*" required>
-    </label>
-    <label>Section label (optional)
-      <input type="text" name="note" placeholder="e.g. Opening, Flowing section, Climax">
-    </label>
-    <button type="submit">Upload</button>
-  </form>
-
-  <h3>Reference links</h3>
-  <p class="board-hint">Got it on YouTube or elsewhere? Paste the link instead of uploading.</p>
-  {% if piece.reference_links %}
-    <div class="link-list">
-      {% for link in piece.reference_links %}
-        <div class="link-item">
-          <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.description or link.url }}</a>
-          {% if link.description %}<span class="link-url">{{ link.url }}</span>{% endif %}
-          <form method="post" action="{{ url_for('delete_reference_link', link_id=link.id) }}"
-                class="inline-form" onsubmit="return confirm('Delete this link?');">
-            <button type="submit" class="delete-btn">Delete</button>
-          </form>
-        </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p>No links added yet.</p>
-  {% endif %}
-  <form method="post" action="{{ url_for('add_reference_link', piece_id=piece.id) }}" class="stacked-form">
-    <label>Paste a video link
-      <input type="url" name="url" placeholder="https://youtube.com/watch?v=..." required>
-    </label>
-    <label>Description (optional)
-      <input type="text" name="description" placeholder="e.g. Horowitz 1968, YouTube">
-    </label>
-    <button type="submit">Add link</button>
-  </form>
-
-  <h2>General knowledge</h2>
-  <p class="board-hint">Exam-prep points worth remembering &mdash; add them as they come up, not the night before.</p>
-  <div class="knowledge-list">
-    {% for note in piece.knowledge_notes | selectattr("category", "equalto", "general") %}
-      <div class="knowledge-item knowledge-{{ note.author }}">
-        <div class="comment-meta">
-          <strong>{{ role_labels[note.author] }}</strong>
-          <span>{{ note.created_at.strftime('%Y-%m-%d') }}</span>
-        </div>
-        <p>{{ note.body }}</p>
-        <form method="post" action="{{ url_for('delete_knowledge_note', note_id=note.id) }}"
-              class="inline-form" onsubmit="return confirm('Delete this point?');">
-          <button type="submit" class="delete-btn">Delete</button>
-        </form>
-      </div>
-    {% else %}
-      <p>No knowledge points yet.</p>
-    {% endfor %}
-  </div>
-  <form method="post" action="{{ url_for('add_knowledge_note', piece_id=piece.id) }}" class="stacked-form">
-    <label>Add a point to remember
-      <textarea name="body" rows="2" placeholder="e.g. Watch the pedal marking difference between bars 8 and 24" required></textarea>
-    </label>
-    <input type="hidden" name="category" value="general">
-    <button type="submit">Add point</button>
-  </form>
-
-  <h2>Peter's Masterclass</h2>
-  <p class="board-hint">Video and notes from Peter's masterclass on this piece &mdash; kept separate from Darren's ongoing feedback.</p>
-  {% set masterclass_videos = piece.videos | selectattr("is_masterclass") | list %}
-  {% if masterclass_videos %}
-    <div class="video-list">
-      {% for video in masterclass_videos %}
-        <div class="video-item">
-          <video controls preload="metadata" src="{{ url_for('uploaded_file', filename=video.filename) }}"></video>
-          <p>
-            {% if video.note %}<strong>{{ video.note }}</strong> &middot; {% endif %}
-            {{ video.original_filename }} &middot; uploaded by {{ role_labels[video.uploaded_by] }}
-            &middot; {{ video.created_at.strftime('%Y-%m-%d %H:%M') }}
-          </p>
-          <form method="post" action="{{ url_for('delete_video', video_id=video.id) }}"
-                class="inline-form" onsubmit="return confirm('Delete this masterclass video?');">
-            <input type="hidden" name="next" value="{{ request.path }}">
-            <button type="submit" class="delete-btn">Delete</button>
-          </form>
-        </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p>No masterclass videos yet.</p>
-  {% endif %}
-  <form method="post" action="{{ url_for('upload_masterclass_video', piece_id=piece.id) }}" enctype="multipart/form-data" class="stacked-form">
-    <label>Add a masterclass video
-      <input type="file" name="video" accept="video/*" required>
-    </label>
-    <label>Note (optional)
-      <input type="text" name="note" placeholder="e.g. Peter on pedalling, 2026-07-18">
-    </label>
-    <button type="submit">Upload</button>
-  </form>
-
-  <div class="knowledge-list">
-    {% for note in piece.knowledge_notes | selectattr("category", "equalto", "masterclass") %}
-      <div class="knowledge-item knowledge-{{ note.author }}">
-        <div class="comment-meta">
-          <strong>{{ role_labels[note.author] }}</strong>
-          <span>{{ note.created_at.strftime('%Y-%m-%d') }}</span>
-        </div>
-        <p>{{ note.body }}</p>
-        <form method="post" action="{{ url_for('delete_knowledge_note', note_id=note.id) }}"
-              class="inline-form" onsubmit="return confirm('Delete this note?');">
-          <button type="submit" class="delete-btn">Delete</button>
-        </form>
-      </div>
-    {% else %}
-      <p>No masterclass notes yet.</p>
-    {% endfor %}
-  </div>
-  <form method="post" action="{{ url_for('add_knowledge_note', piece_id=piece.id) }}" class="stacked-form">
-    <label>Add a masterclass note
-      <textarea name="body" rows="2" placeholder="e.g. Peter suggested slower tempo through bar 20" required></textarea>
-    </label>
-    <input type="hidden" name="category" value="masterclass">
-    <button type="submit">Add note</button>
-  </form>
-
   <h2>Areas of improvement</h2>
   <p class="board-hint">Tap an area to open it, adjust progress, or jump to the full page.</p>
   <div class="accordion" id="accordion">
@@ -239,38 +91,159 @@
     </details>
   {% endif %}
 
-  <h2>Lesson / practice videos</h2>
-  <div class="video-list">
-    {% for video in piece.videos | rejectattr("is_reference") | rejectattr("is_masterclass") %}
-      <div class="video-item">
-        <video controls preload="metadata" src="{{ url_for('uploaded_file', filename=video.filename) }}"></video>
-        <p>
-          {{ video.original_filename }} &middot; uploaded by {{ role_labels[video.uploaded_by] }}
-          &middot; {{ video.created_at.strftime('%Y-%m-%d %H:%M') }}
-          {% if video.area %} &middot; linked to <a href="{{ url_for('area_detail', area_id=video.area.id) }}">{{ video.area.title }}</a>{% endif %}
-        </p>
-        {% if video.note %}<p class="note">{{ video.note }}</p>{% endif %}
-        <form method="post" action="{{ url_for('delete_video', video_id=video.id) }}"
-              class="inline-form" onsubmit="return confirm('Delete this video?');">
-          <input type="hidden" name="next" value="{{ request.path }}">
-          <button type="submit" class="delete-btn">Delete</button>
-        </form>
+  <details class="section-block">
+    <summary><span class="section-title">Lesson Video</span><span class="section-chevron">&#9656;</span></summary>
+    <p class="board-hint">Split it into sections if that's easier to study &mdash; e.g. opening, flowing section, climax.</p>
+    {% set lesson_videos = piece.videos | rejectattr("is_masterclass") | rejectattr("area_id") | list %}
+    {% if lesson_videos %}
+      <div class="video-list">
+        {% for video in lesson_videos %}
+          <div class="video-item">
+            <video controls preload="metadata" src="{{ url_for('uploaded_file', filename=video.filename) }}"></video>
+            <p>
+              {% if video.note %}<strong>{{ video.note }}</strong> &middot; {% endif %}
+              {{ video.original_filename }} &middot; uploaded by {{ role_labels[video.uploaded_by] }}
+              &middot; {{ video.created_at.strftime('%Y-%m-%d %H:%M') }}
+            </p>
+            <form method="post" action="{{ url_for('delete_video', video_id=video.id) }}"
+                  class="inline-form" onsubmit="return confirm('Delete this video?');">
+              <input type="hidden" name="next" value="{{ request.path }}">
+              <button type="submit" class="delete-btn">Delete</button>
+            </form>
+          </div>
+        {% endfor %}
       </div>
     {% else %}
-      <p>No videos uploaded for this piece yet.</p>
-    {% endfor %}
-  </div>
+      <p>No lesson videos yet &mdash; either of you can upload one to study against.</p>
+    {% endif %}
+    <form method="post" action="{{ url_for('upload_reference_video', piece_id=piece.id) }}" enctype="multipart/form-data" class="stacked-form">
+      <label>Add a lesson video
+        <input type="file" name="video" accept="video/*" required>
+      </label>
+      <label>Section label (optional)
+        <input type="text" name="note" placeholder="e.g. Opening, Flowing section, Climax">
+      </label>
+      <button type="submit">Upload</button>
+    </form>
 
-  <h3>Upload a video</h3>
-  <form method="post" action="{{ url_for('upload_piece_video', piece_id=piece.id) }}" enctype="multipart/form-data" class="stacked-form">
-    <label>Video file
-      <input type="file" name="video" accept="video/*" required>
-    </label>
-    <label>Note
-      <input type="text" name="note" placeholder="Optional note about this recording">
-    </label>
-    <button type="submit">Upload</button>
-  </form>
+    <h3>Reference links</h3>
+    <p class="board-hint">Got it on YouTube or elsewhere? Paste the link instead of uploading.</p>
+    {% if piece.reference_links %}
+      <div class="link-list">
+        {% for link in piece.reference_links %}
+          <div class="link-item">
+            <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.description or link.url }}</a>
+            {% if link.description %}<span class="link-url">{{ link.url }}</span>{% endif %}
+            <form method="post" action="{{ url_for('delete_reference_link', link_id=link.id) }}"
+                  class="inline-form" onsubmit="return confirm('Delete this link?');">
+              <button type="submit" class="delete-btn">Delete</button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>No links added yet.</p>
+    {% endif %}
+    <form method="post" action="{{ url_for('add_reference_link', piece_id=piece.id) }}" class="stacked-form">
+      <label>Paste a video link
+        <input type="url" name="url" placeholder="https://youtube.com/watch?v=..." required>
+      </label>
+      <label>Description (optional)
+        <input type="text" name="description" placeholder="e.g. Horowitz 1968, YouTube">
+      </label>
+      <button type="submit">Add link</button>
+    </form>
+  </details>
+
+  <details class="section-block">
+    <summary><span class="section-title">General Knowledge</span><span class="section-chevron">&#9656;</span></summary>
+    <p class="board-hint">Exam-prep points worth remembering &mdash; add them as they come up, not the night before.</p>
+    <div class="knowledge-list">
+      {% for note in piece.knowledge_notes | selectattr("category", "equalto", "general") %}
+        <div class="knowledge-item knowledge-{{ note.author }}">
+          <div class="comment-meta">
+            <strong>{{ role_labels[note.author] }}</strong>
+            <span>{{ note.created_at.strftime('%Y-%m-%d') }}</span>
+          </div>
+          <p>{{ note.body }}</p>
+          <form method="post" action="{{ url_for('delete_knowledge_note', note_id=note.id) }}"
+                class="inline-form" onsubmit="return confirm('Delete this point?');">
+            <button type="submit" class="delete-btn">Delete</button>
+          </form>
+        </div>
+      {% else %}
+        <p>No knowledge points yet.</p>
+      {% endfor %}
+    </div>
+    <form method="post" action="{{ url_for('add_knowledge_note', piece_id=piece.id) }}" class="stacked-form">
+      <label>Add a point to remember
+        <textarea name="body" rows="2" placeholder="e.g. Watch the pedal marking difference between bars 8 and 24" required></textarea>
+      </label>
+      <input type="hidden" name="category" value="general">
+      <button type="submit">Add point</button>
+    </form>
+  </details>
+
+  <details class="section-block">
+    <summary><span class="section-title">Peter's Masterclass</span><span class="section-chevron">&#9656;</span></summary>
+    <p class="board-hint">Video and notes from Peter's masterclass on this piece &mdash; kept separate from Darren's ongoing feedback.</p>
+    {% set masterclass_videos = piece.videos | selectattr("is_masterclass") | list %}
+    {% if masterclass_videos %}
+      <div class="video-list">
+        {% for video in masterclass_videos %}
+          <div class="video-item">
+            <video controls preload="metadata" src="{{ url_for('uploaded_file', filename=video.filename) }}"></video>
+            <p>
+              {% if video.note %}<strong>{{ video.note }}</strong> &middot; {% endif %}
+              {{ video.original_filename }} &middot; uploaded by {{ role_labels[video.uploaded_by] }}
+              &middot; {{ video.created_at.strftime('%Y-%m-%d %H:%M') }}
+            </p>
+            <form method="post" action="{{ url_for('delete_video', video_id=video.id) }}"
+                  class="inline-form" onsubmit="return confirm('Delete this masterclass video?');">
+              <input type="hidden" name="next" value="{{ request.path }}">
+              <button type="submit" class="delete-btn">Delete</button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>No masterclass videos yet.</p>
+    {% endif %}
+    <form method="post" action="{{ url_for('upload_masterclass_video', piece_id=piece.id) }}" enctype="multipart/form-data" class="stacked-form">
+      <label>Add a masterclass video
+        <input type="file" name="video" accept="video/*" required>
+      </label>
+      <label>Note (optional)
+        <input type="text" name="note" placeholder="e.g. Peter on pedalling, 2026-07-18">
+      </label>
+      <button type="submit">Upload</button>
+    </form>
+
+    <div class="knowledge-list">
+      {% for note in piece.knowledge_notes | selectattr("category", "equalto", "masterclass") %}
+        <div class="knowledge-item knowledge-{{ note.author }}">
+          <div class="comment-meta">
+            <strong>{{ role_labels[note.author] }}</strong>
+            <span>{{ note.created_at.strftime('%Y-%m-%d') }}</span>
+          </div>
+          <p>{{ note.body }}</p>
+          <form method="post" action="{{ url_for('delete_knowledge_note', note_id=note.id) }}"
+                class="inline-form" onsubmit="return confirm('Delete this note?');">
+            <button type="submit" class="delete-btn">Delete</button>
+          </form>
+        </div>
+      {% else %}
+        <p>No masterclass notes yet.</p>
+      {% endfor %}
+    </div>
+    <form method="post" action="{{ url_for('add_knowledge_note', piece_id=piece.id) }}" class="stacked-form">
+      <label>Add a masterclass note
+        <textarea name="body" rows="2" placeholder="e.g. Peter suggested slower tempo through bar 20" required></textarea>
+      </label>
+      <input type="hidden" name="category" value="masterclass">
+      <button type="submit">Add note</button>
+    </form>
+  </details>
 {% endblock %}
 {% block scripts %}
   <script src="{{ url_for('static', filename='accordion.js') }}"></script>

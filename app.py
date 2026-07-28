@@ -220,18 +220,6 @@ def add_area(piece_id):
     return redirect(url_for("piece_detail", piece_id=piece.id))
 
 
-@app.route("/pieces/<int:piece_id>/videos/upload", methods=["POST"])
-@require_role
-def upload_piece_video(piece_id):
-    piece = Piece.query.get_or_404(piece_id)
-    file_storage = request.files.get("video")
-    if file_storage and file_storage.filename and allowed_video(file_storage.filename):
-        video = save_video(file_storage, piece.id)
-        video.note = request.form.get("note", "").strip()
-        db.session.commit()
-    return redirect(url_for("piece_detail", piece_id=piece.id))
-
-
 @app.route("/pieces/<int:piece_id>/reference/upload", methods=["POST"])
 @require_role
 def upload_reference_video(piece_id):
