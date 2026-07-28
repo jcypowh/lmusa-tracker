@@ -74,7 +74,7 @@ def allowed_video(filename):
     return ext in config.ALLOWED_VIDEO_EXTENSIONS
 
 
-def save_video(file_storage, piece_id, area_id=None, is_reference=False):
+def save_video(file_storage, piece_id, area_id=None, is_reference=False, is_masterclass=False):
     original = secure_filename(file_storage.filename)
     ext = original.rsplit(".", 1)[-1].lower()
     stored_name = f"{uuid.uuid4().hex}.{ext}"
@@ -86,6 +86,7 @@ def save_video(file_storage, piece_id, area_id=None, is_reference=False):
         original_filename=original,
         uploaded_by=session.get("role"),
         is_reference=is_reference,
+        is_masterclass=is_masterclass,
     )
     db.session.add(video)
     return video
@@ -176,9 +177,14 @@ def update_piece_color(piece_id):
 def add_knowledge_note(piece_id):
     piece = Piece.query.get_or_404(piece_id)
     body = request.form.get("body", "").strip()
+    category = request.form.get("category", "general")
+    if category not in ("general", "masterclass"):
+        category = "general"
     if body:
         db.session.add(
-            KnowledgeNote(piece_id=piece.id, author=session.get("role"), body=body)
+            KnowledgeNote(
+                piece_id=piece.id, author=session.get("role"), body=body, category=category
+            )
         )
         db.session.commit()
     return redirect(url_for("piece_detail", piece_id=piece.id))
@@ -232,6 +238,18 @@ def upload_reference_video(piece_id):
     file_storage = request.files.get("video")
     if file_storage and file_storage.filename and allowed_video(file_storage.filename):
         video = save_video(file_storage, piece.id, is_reference=True)
+        video.note = request.form.get("note", "").strip()
+        db.session.commit()
+    return redirect(url_for("piece_detail", piece_id=piece.id))
+
+
+@app.route("/pieces/<int:piece_id>/masterclass/upload", methods=["POST"])
+@require_role
+def upload_masterclass_video(piece_id):
+    piece = Piece.query.get_or_404(piece_id)
+    file_storage = request.files.get("video")
+    if file_storage and file_storage.filename and allowed_video(file_storage.filename):
+        video = save_video(file_storage, piece.id, is_masterclass=True)
         video.note = request.form.get("note", "").strip()
         db.session.commit()
     return redirect(url_for("piece_detail", piece_id=piece.id))
@@ -382,6 +400,18 @@ def ensure_schema():
         if "is_reference" not in video_cols:
             conn.execute(
                 text("ALTER TABLE video ADD COLUMN is_reference BOOLEAN DEFAULT 0")
+            )
+        if "is_masterclass" not in video_cols:
+            conn.execute(
+                text("ALTER TABLE video ADD COLUMN is_masterclass BOOLEAN DEFAULT 0")
+            )
+
+        knowledge_cols = {
+            row[1] for row in conn.execute(text("PRAGMA table_info(knowledge_note)"))
+        }
+        if "category" not in knowledge_cols:
+            conn.execute(
+                text("ALTER TABLE knowledge_note ADD COLUMN category VARCHAR(20) DEFAULT 'general'")
             )
         conn.commit()
 

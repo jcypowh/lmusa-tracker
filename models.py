@@ -75,6 +75,7 @@ class Video(db.Model):
     uploaded_by = db.Column(db.String(10))
     note = db.Column(db.Text)
     is_reference = db.Column(db.Boolean, default=False, nullable=False)
+    is_masterclass = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
@@ -83,6 +84,7 @@ class KnowledgeNote(db.Model):
     piece_id = db.Column(db.Integer, db.ForeignKey("piece.id"), nullable=False)
     author = db.Column(db.String(10), nullable=False)
     body = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(20), default="general", nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
