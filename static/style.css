@@ -286,6 +286,20 @@ h2 { margin-top: 2.5rem; }
 .video-item p { font-size: 0.85rem; color: var(--muted); margin: 0.35rem 0 0; }
 .video-item .note { color: var(--fg); }
 
+.link-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+}
+.link-item a { font-weight: 600; color: var(--fg); }
+.link-url { font-size: 0.8rem; color: var(--muted); overflow-wrap: anywhere; }
+
 .comment-thread { display: flex; flex-direction: column; gap: 0.75rem; }
 .comment-row { display: flex; }
 .comment-row-jeremy { justify-content: flex-end; }

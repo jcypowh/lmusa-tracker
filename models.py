@@ -36,6 +36,12 @@ class Piece(db.Model):
         cascade="all, delete-orphan",
         order_by="KnowledgeNote.created_at",
     )
+    reference_links = db.relationship(
+        "ReferenceLink",
+        backref="piece",
+        cascade="all, delete-orphan",
+        order_by="ReferenceLink.created_at",
+    )
 
     def average_percent(self):
         if not self.areas:
@@ -85,6 +91,15 @@ class KnowledgeNote(db.Model):
     author = db.Column(db.String(10), nullable=False)
     body = db.Column(db.Text, nullable=False)
     category = db.Column(db.String(20), default="general", nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class ReferenceLink(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    piece_id = db.Column(db.Integer, db.ForeignKey("piece.id"), nullable=False)
+    url = db.Column(db.Text, nullable=False)
+    description = db.Column(db.String(300))
+    added_by = db.Column(db.String(10))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 

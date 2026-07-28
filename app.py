@@ -25,6 +25,7 @@ from models import (
     ImprovementArea,
     KnowledgeNote,
     Piece,
+    ReferenceLink,
     Video,
     db,
 )
@@ -253,6 +254,35 @@ def upload_masterclass_video(piece_id):
         video.note = request.form.get("note", "").strip()
         db.session.commit()
     return redirect(url_for("piece_detail", piece_id=piece.id))
+
+
+@app.route("/pieces/<int:piece_id>/reference-links/add", methods=["POST"])
+@require_role
+def add_reference_link(piece_id):
+    piece = Piece.query.get_or_404(piece_id)
+    url = request.form.get("url", "").strip()
+    description = request.form.get("description", "").strip()
+    if url:
+        db.session.add(
+            ReferenceLink(
+                piece_id=piece.id,
+                url=url,
+                description=description,
+                added_by=session.get("role"),
+            )
+        )
+        db.session.commit()
+    return redirect(url_for("piece_detail", piece_id=piece.id))
+
+
+@app.route("/reference-links/<int:link_id>/delete", methods=["POST"])
+@require_role
+def delete_reference_link(link_id):
+    link = ReferenceLink.query.get_or_404(link_id)
+    piece_id = link.piece_id
+    db.session.delete(link)
+    db.session.commit()
+    return redirect(url_for("piece_detail", piece_id=piece_id))
 
 
 @app.route("/videos/<int:video_id>/delete", methods=["POST"])
